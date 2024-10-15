@@ -1,0 +1,55 @@
+trigger:
+- main
+
+variables:
+  vmImageName: 'ubuntu-latest'
+  terraformDirectory: './src'
+  resultsTerraformAnalysis: './results/results-azure-terraform.sarif'
+
+stages:
+- stage: IaCScanning
+  displayName: IaC Scanning stage
+  jobs:
+  - job: IaCScanning
+    displayName: IaCScanning
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - script: |
+        pip install checkov
+      displayName: Instalar o Checkov via pip
+    - script: |
+        checkov
+        checkov --help
+      displayName: Testar a instalacao do Checkov
+    - script: |
+        mkdir results
+      displayName: Criar diretorio /results para armazenar os resultados gerados com o Checkov
+    - script: |
+        checkov -d $(terraformDirectory) -o cli -o sarif --output-file-path $(resultsTerraformAnalysis)
+      displayName: Executar analise com o Checkov
+    - script: |
+        cd results
+        ls
+      displayName: Exibir arquivos gerados em /results
+      condition: always()
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(resultsTerraformAnalysis)'
+        ArtifactName: 'CodeAnalysisLogs'
+        publishLocation: 'Container'
+      displayName: Publicacao de relatorio SARIF
+      condition: failed()
+- stage: IaCDeploy
+  displayName: IaC Deploy stage
+  dependsOn: IaCScanning
+  jobs:
+  - job: IaCDeploy
+    displayName: IaCDeploy
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - script: |
+        echo 'Se chegou aqui...'
+        echo 'E porque tudo esta certo!!!'
+      displayName: Testando o deployment
