@@ -4,7 +4,7 @@ trigger:
 variables:
   vmImageName: 'ubuntu-latest'
   terraformDirectory: './src'
-  resultsTerraformAnalysis: './results/results-azure-terraform.sarif'
+  resultsTerraformAnalysis: './results'
 
 stages:
 - stage: IaCScanning
